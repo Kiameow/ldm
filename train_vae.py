@@ -175,7 +175,8 @@ def train(args):
                 test_sample = next(dataloader_test_iter)
 
             test_sample = Sample(**test_sample)
-            save_sample_images(autoencoder, test_sample.img, epoch + 1, args)
+            test_images = test_sample.img.to(device)
+            save_sample_images(autoencoder, test_images, epoch + 1, args)
         # 每隔一定epoch保存模型
         if (epoch + 1) % args.save_interval == 0:
             save_model(autoencoder, optimizer, epoch + 1, args)
