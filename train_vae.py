@@ -5,7 +5,7 @@ from labml_nn.diffusion.stable_diffusion.model.autoencoder import Autoencoder, E
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn as nn
-from utils import get_latest_ckpt_path, parse_args, get_random_batch
+from utils import get_latest_ckpt_path, parse_args
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
@@ -134,7 +134,7 @@ def train(args):
     
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
     dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
-    dataloader_test = iter(dataloader_test)
+    dataloader_test_iter = iter(dataloader_test)
     
     # 2. 定义模型, loss function and optimizer
     autoencoder: Autoencoder
@@ -168,7 +168,12 @@ def train(args):
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
 
         if (epoch + 1) % args.sample_interval == 0:
-            test_sample = get_random_batch(dataloader_test)
+            try:
+                test_sample = next(dataloader_test_iter)
+            except:
+                dataloader_test_iter = iter(dataloader_test)
+                test_sample = next(dataloader_test_iter)
+
             test_sample = Sample(**test_sample)
             save_sample_images(autoencoder, test_sample.img, epoch + 1, args)
         # 每隔一定epoch保存模型

@@ -85,16 +85,6 @@ def get_latest_ckpt_path(dataset_name):
     
     # 返回完整的路径
     return os.path.join('ckpts', latest_folder)
-
-def get_random_batch(dataloader):
-    try:
-        # 尝试从当前迭代器中取一个 batch
-        batch = next(dataloader_iterator)
-    except StopIteration:
-        # 如果迭代器耗尽，重新创建一个迭代器
-        dataloader_iterator = iter(dataloader)
-        batch = next(dataloader_iterator)
-    return batch
     
 
 if __name__ == "__main__":
