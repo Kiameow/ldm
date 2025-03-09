@@ -153,19 +153,20 @@ def train(args):
             encoded = autoencoder.encode(images)
             decoded = autoencoder.decode(encoded.sample())
             
-            # 计算损失
+            # 计算损失 backward
             loss = loss_fn(decoded, images)
-            
-            # 反向传播和优化
-            optimizer.zero_grad()
+            loss = loss / args.accumulation_steps
             loss.backward()
-            optimizer.step()
-            
-            # 更新学习率
-            lr_scheduler.step(loss)
+            # 反向传播和优化
+            if (batch_idx + 1) % args.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
             
             if batch_idx % 10 == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
+                
+        # 更新学习率
+        lr_scheduler.step(loss)
 
         if (epoch + 1) % args.sample_interval == 0:
             try:

@@ -59,6 +59,7 @@ def parse_args():
     parser.add_argument("--save_ae_dir", type=str, default="ckpts_ae", help="Directory to save ae checkpoints")
     parser.add_argument("--ae_sample_dir", type=str, default="results_ae", help="Directory to save ae samples")
     parser.add_argument("--resume", action="store_true", help="Resume training from the latest checkpoint")
+    parser.add_argument("--accumulation_steps", type=int, default=4, help="accumulation step")
     args = parser.parse_args()
 
     # 读取 JSON 配置
