@@ -95,13 +95,13 @@ def load_model(args):
             lr_scheduler_path = os.path.join(ckpt_folder_path, "lr_scheduler.pt")
 
             if os.path.exists(encoder_path):
-                autoencoder.load_state_dict(torch.load(encoder_path, map_location=device))
+                encoder.load_state_dict(torch.load(encoder_path, map_location=device))
                 print(f"Loaded encoder from {encoder_path}")
             else:
                 print(f"No encoder checkpoint found at {encoder_path}")
                 
             if os.path.exists(decoder_path):
-                autoencoder.load_state_dict(torch.load(decoder_path, map_location=device))
+                decoder.load_state_dict(torch.load(decoder_path, map_location=device))
                 print(f"Loaded decoder from {decoder_path}")
             else:
                 print(f"No decoder checkpoint found at {decoder_path}")
