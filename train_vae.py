@@ -58,7 +58,8 @@ def save_model(autoencoder: Autoencoder, optimizer: optim.Adam, lr_scheduler: Re
     os.makedirs(new_ckpt_path, exist_ok=True)
     
     # 保存模型权重
-    torch.save(autoencoder.state_dict(), os.path.join(new_ckpt_path, f"autoencoder.pt"))
+    torch.save(autoencoder.encoder.state_dict(), os.path.join(new_ckpt_path, f"encoder.pt"))
+    torch.save(autoencoder.decoder.state_dict(), os.path.join(new_ckpt_path, f"decoder.pt"))
     
     # 保存优化器状态（包括学习率）
     torch.save(optimizer.state_dict(), os.path.join(new_ckpt_path, f"optimizer.pt"))
@@ -88,15 +89,22 @@ def load_model(args):
     if args.resume:
         ckpt_folder_path = get_latest_ckpt_path(args.dataset_name)
         if ckpt_folder_path:
-            autoencoder_path = os.path.join(ckpt_folder_path, "autoencoder.pt")
+            encoder_path = os.path.join(ckpt_folder_path, "encoder.pt")
+            decoder_path = os.path.join(ckpt_folder_path, "decoder.pt")
             optimizer_path = os.path.join(ckpt_folder_path, "optimizer.pt")
             lr_scheduler_path = os.path.join(ckpt_folder_path, "lr_scheduler.pt")
 
-            if os.path.exists(autoencoder_path):
-                autoencoder.load_state_dict(torch.load(autoencoder_path, map_location=device))
-                print(f"Loaded autoencoder from {autoencoder_path}")
+            if os.path.exists(encoder_path):
+                autoencoder.load_state_dict(torch.load(encoder_path, map_location=device))
+                print(f"Loaded encoder from {encoder_path}")
             else:
-                print(f"No autoencoder checkpoint found at {autoencoder_path}")
+                print(f"No encoder checkpoint found at {encoder_path}")
+                
+            if os.path.exists(decoder_path):
+                autoencoder.load_state_dict(torch.load(decoder_path, map_location=device))
+                print(f"Loaded decoder from {decoder_path}")
+            else:
+                print(f"No decoder checkpoint found at {decoder_path}")
 
             if os.path.exists(optimizer_path):
                 optimizer.load_state_dict(torch.load(optimizer_path, map_location=device))
