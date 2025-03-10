@@ -51,10 +51,10 @@ def save_sample_images(autoencoder: Autoencoder, images: torch.Tensor, epoch: in
     autoencoder.train()  # 设回训练模式
 
 def save_model(autoencoder: Autoencoder, optimizer: optim.Adam, lr_scheduler: ReduceLROnPlateau, epoch, args):
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
+    if not os.path.exists(args.save_ae_dir):
+        os.makedirs(args.save_ae_dir)
         
-    new_ckpt_path = os.path.join(args.save_dir, f"ckpt-{args.dataset_name}-{epoch}")
+    new_ckpt_path = os.path.join(args.save_ae_dir, f"ckpt-{args.dataset_name}-{epoch}")
     os.makedirs(new_ckpt_path, exist_ok=True)
     
     # 保存模型权重
