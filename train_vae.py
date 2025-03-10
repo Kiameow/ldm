@@ -188,7 +188,7 @@ def train(args):
             save_sample_images(autoencoder, test_images, epoch + 1, args)
         # 每隔一定epoch保存模型
         if (epoch + 1) % args.save_interval == 0:
-            save_model(autoencoder, optimizer, epoch + 1, args)
+            save_model(autoencoder, optimizer, lr_scheduler, epoch + 1, args)
 
 if __name__ == "__main__":
     args = parse_args()
