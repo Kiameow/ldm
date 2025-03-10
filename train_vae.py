@@ -170,7 +170,7 @@ def train(args):
                 optimizer.step()
                 optimizer.zero_grad()
             
-            if batch_idx % 10 == 0:
+            if batch_idx % args.output_interval == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
                 
         # 更新学习率

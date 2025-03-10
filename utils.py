@@ -54,6 +54,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--initial_lr", type=float, default=1e-4, help="Initial learning rate")
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs to train")
+    parser.add_argument("--output_interval", type=int, default=10, help="debug info show")
     parser.add_argument("--save_interval", type=int, default=10, help="Save model every N epochs")
     parser.add_argument("--save_dir", type=str, default="ckpts", help="Directory to save checkpoints")
     parser.add_argument("--save_ae_dir", type=str, default="ckpts_ae", help="Directory to save ae checkpoints")
