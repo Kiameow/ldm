@@ -175,6 +175,7 @@ def train(args):
                 
         # 更新学习率
         lr_scheduler.step(loss)
+        print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
 
         if (epoch + 1) % args.sample_interval == 0:
             try:

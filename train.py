@@ -29,9 +29,23 @@ def load_model(args):
     )
     
     clip = CLIPTextEmbedder().to(device)
-    encoder = Encoder().to(device)
-    decoder = Decoder().to(device)
-    autoencoder = Autoencoder(encoder, decoder, ).to(device)
+    if next(clip.parameters()).device is None:
+        raise RuntimeError("No CLIP ckpt found")
+    
+    ae_ckpt_folder = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
+    if ae_ckpt_folder and os.path.exists(ae_ckpt_folder):
+        encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=4)
+        decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
+        autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
+        
+        encoder_path = os.path.join(ae_ckpt_folder, "encoder.pt")
+        decoder_path = os.path.join(ae_ckpt_folder, "decoder.pt")
+        
+        encoder.load_state_dict(torch.load(encoder_path, map_location=device))
+        decoder.load_state_dict(torch.load(decoder_path, map_location=device))
+    else:
+        raise RuntimeError("No autoencoder ckpt found")
+        
     
     clip.eval()
     autoencoder.eval()
@@ -116,16 +130,19 @@ def train(args):
             
             # 计算损失
             loss = loss_fn(predicted_noise, noise)
+            loss = loss / args.accumulation_steps
+            loss.backward()
             
             # 反向传播和优化
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
-            lr_scheduler.step(loss)
+            if (batch_idx + 1) % args.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
             
             if batch_idx % args.output_interval == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
+                
+        lr_scheduler.step(loss)
+        print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
 
         if (epoch + 1) % args.save_interval == 0:
             save_model(ldm.unet_model, optimizer, epoch + 1, args)
