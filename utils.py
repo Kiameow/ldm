@@ -72,6 +72,8 @@ def parse_args():
     return args
 
 def get_latest_ckpt_path(dataset_name, save_dir):
+    if not os.path.exists(save_dir):
+        return None
     # 假设所有的ckpt文件夹都在当前目录下
     ckpt_folders = [f for f in os.listdir(save_dir) if f.startswith('ckpt-')]
     
