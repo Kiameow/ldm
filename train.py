@@ -41,7 +41,7 @@ def load_model(args):
         param.requires_grad_(False)
     
     if args.resume:
-        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name)
+        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_dir)
         unet.load_state_dict(torch.load(os.path.join(ckpt_folder_path, "unet.pt"), map_location=device))
         
     ldm = LatentDiffusion(

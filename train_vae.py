@@ -87,7 +87,7 @@ def load_model(args):
 
     # 如果设置了继续训练，则加载模型、优化器和学习率调度器状态
     if args.resume:
-        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name)
+        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
         if ckpt_folder_path:
             encoder_path = os.path.join(ckpt_folder_path, "encoder.pt")
             decoder_path = os.path.join(ckpt_folder_path, "decoder.pt")

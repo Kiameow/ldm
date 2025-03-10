@@ -71,9 +71,9 @@ def parse_args():
 
     return args
 
-def get_latest_ckpt_path(dataset_name):
+def get_latest_ckpt_path(dataset_name, save_dir):
     # 假设所有的ckpt文件夹都在当前目录下
-    ckpt_folders = [f for f in os.listdir('ckpts') if f.startswith('ckpt-')]
+    ckpt_folders = [f for f in os.listdir(save_dir) if f.startswith('ckpt-')]
     
     # 过滤出与dataset_name相关的文件夹
     related_folders = [f for f in ckpt_folders if f.split('-')[1] == dataset_name]
@@ -85,7 +85,7 @@ def get_latest_ckpt_path(dataset_name):
     latest_folder = max(related_folders, key=lambda x: int(re.search(r'\d+', x).group()))
     
     # 返回完整的路径
-    return os.path.join('ckpts', latest_folder)
+    return os.path.join(save_dir, latest_folder)
     
 
 if __name__ == "__main__":
