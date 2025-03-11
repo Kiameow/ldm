@@ -59,6 +59,7 @@ def parse_args():
     parser.add_argument("--save_dir", type=str, default="ckpts", help="Directory to save checkpoints")
     parser.add_argument("--save_ae_dir", type=str, default="ckpts_ae", help="Directory to save ae checkpoints")
     parser.add_argument("--ae_sample_dir", type=str, default="results_ae", help="Directory to save ae samples")
+    parser.add_argument("--sample_dir", type=str, default="results_ldm", help="Directory to save ldm samples")
     parser.add_argument("--resume", action="store_true", help="Resume training from the latest checkpoint")
     parser.add_argument("--accumulation_steps", type=int, default=4, help="accumulation step")
     parser.add_argument("--ldm_sample_t", type=int, default=100, help="ldm add noise and denoise step")
