@@ -89,10 +89,10 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         v_latents = visualize_latents(latents.to("cpu"), (256, 256))
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
         v_recons = recons.to("cpu")
-        print(f"original: {v_images.shape}")
-        print(f"ori_latents: {v_latents.shape}")
-        print(f"recon_latents: {v_recon_latents.shape}")
-        print(f"recon: {v_recons.shape}")
+        # print(f"original: {v_images.shape}")
+        # print(f"ori_latents: {v_latents.shape}")
+        # print(f"recon_latents: {v_recon_latents.shape}")
+        # print(f"recon: {v_recons.shape}")
         
         # 确保不会超出 batch_size 的范围
         num_images = min(8, images.size(0))
