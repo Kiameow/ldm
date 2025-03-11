@@ -135,7 +135,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         plt.savefig(save_comp_path, bbox_inches="tight", pad_inches=0.1)
         plt.close()
         
-        for key, r in sample_res_dict:
+        for key, r in sample_res_dict.items():
             r: torch.Tensor
             img_r: Image.Image = tensor_to_PILimage(r)
             image_save_path = os.path.join(sample_batch_dir, f"{batch_idx}-{key}.png")
