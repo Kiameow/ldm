@@ -182,7 +182,7 @@ def load_model(args):
     ).to(device)
     
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(ldm.unet_model.parameters(), lr=args.initial_lr)
+    optimizer = optim.Adam(ldm.model.parameters(), lr=args.initial_lr)
     lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
     
     return ldm, loss_fn, optimizer, lr_scheduler
@@ -279,7 +279,7 @@ def train(args):
             test_images = test_sample.img.to(device)
             save_sample_images(ldm, test_images, "healthy", epoch + 1, args)
         if (epoch + 1) % args.save_interval == 0:
-            save_model(ldm.unet_model, optimizer, epoch + 1, args)
+            save_model(ldm.model, optimizer, epoch + 1, args)
             
             
 
