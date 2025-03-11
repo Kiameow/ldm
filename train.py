@@ -15,6 +15,7 @@ import os
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
+from dummy_text_embedder import DummyTextEmbedder
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -130,9 +131,15 @@ def load_model(args):
         d_cond=768              # 条件嵌入维度（与 CLIP 一致）
     )
     
-    clip = CLIPTextEmbedder().to(device)
-    if next(clip.parameters()).device is None:
-        raise RuntimeError("No CLIP ckpt found")
+    if args.no_clip:
+        clip = DummyTextEmbedder(d_cond=768).to(device)
+        print("run without clip")
+    else:
+        clip = CLIPTextEmbedder().to(device)
+        if next(clip.parameters()).device is None:
+            raise RuntimeError("No CLIP ckpt found")
+        else:
+            print("CLIP ready")
     
     ae_ckpt_folder = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ae_ckpt_folder and os.path.exists(ae_ckpt_folder):
@@ -145,6 +152,7 @@ def load_model(args):
         
         encoder.load_state_dict(torch.load(encoder_path, map_location=device))
         decoder.load_state_dict(torch.load(decoder_path, map_location=device))
+        print("Autoencoder ready")
     else:
         raise RuntimeError("No autoencoder ckpt found")
         
@@ -208,6 +216,8 @@ def train(args):
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
     dataloader_test = DataLoader(dataset_test, batch_size=args.sample_batch_size, shuffle=True, num_workers=2, pin_memory=True)
     dataloader_test_iter = iter(dataloader_test)
+    
+    print(f"Dataloader for {args.dataset_name} ready")
     
     # 2. 定义模型, loss function and optimizer
     ldm: LatentDiffusion
