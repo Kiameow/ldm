@@ -96,6 +96,7 @@ def eval(args):
     
     # 3. 训练循环
     for batch_idx, sample in enumerate(dataloader_test):
+        print(f"Batch {batch_idx}")
         sample = Sample(**sample)
         images = sample.img.to(device)
         save_sample_images(autoencoder, images, batch_idx, args)
