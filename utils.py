@@ -132,6 +132,6 @@ def visualize_latents(tensor, target_size):
 
 if __name__ == "__main__":
     args = parse_args()
-    print(args.batch_size, args.learning_rate) 
+    print(args.batch_size, args.initial_lr) 
 
 

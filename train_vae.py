@@ -194,5 +194,5 @@ def train(args):
 if __name__ == "__main__":
     args = parse_args()
     print(f"Batch size: {args.batch_size}")
-    print(f"Learning rate: {args.learning_rate}")
+    print(f"Learning rate: {args.initial_lr}")
     train(args=args)
