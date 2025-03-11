@@ -131,7 +131,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         sample_batch_dir = os.path.join(sample_dir, str(batch_idx))
         os.makedirs(sample_batch_dir, exist_ok=True)
         
-        save_comp_path = os.path.join(sample_dir, f"{batch_idx}-comparison.png")
+        save_comp_path = os.path.join(sample_batch_dir, f"{batch_idx}-comparison.png")
         plt.savefig(save_comp_path, bbox_inches="tight", pad_inches=0.1)
         plt.close()
         

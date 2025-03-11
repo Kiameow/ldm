@@ -132,6 +132,7 @@ def visualize_latents(tensor, target_size):
     return resized
 
 def tensor_to_PILimage(tensor: torch.Tensor) -> Image.Image:
+    tensor = (tensor + 1) / 2
     to_pil = transforms.ToPILImage()
     image = to_pil(tensor[0])
     return image
