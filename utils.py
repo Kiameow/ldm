@@ -79,7 +79,8 @@ def parse_args():
 
 def get_latest_ckpt_path(dataset_name, save_dir):
     if not os.path.exists(save_dir):
-        return None
+        return None, None
+    
     # 假设所有的ckpt文件夹都在当前目录下
     ckpt_folders = [f for f in os.listdir(save_dir) if f.startswith('ckpt-')]
     
@@ -87,13 +88,16 @@ def get_latest_ckpt_path(dataset_name, save_dir):
     related_folders = [f for f in ckpt_folders if f.split('-')[1] == dataset_name]
     
     if not related_folders:
-        return None  # 如果没有找到相关的文件夹，返回None
+        return None, None  # 如果没有找到相关的文件夹，返回None
     
     # 提取步骤数并找到最新的文件夹
     latest_folder = max(related_folders, key=lambda x: int(re.search(r'\d+', x).group()))
     
-    # 返回完整的路径
-    return os.path.join(save_dir, latest_folder)
+    # 提取epoch值
+    epoch = int(re.search(r'\d+', latest_folder).group())
+    
+    # 返回完整的路径和epoch值
+    return os.path.join(save_dir, latest_folder), epoch
 
 def visualize_latents(tensor, target_size):
     """

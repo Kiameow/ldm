@@ -87,7 +87,7 @@ def load_model(args):
 
     # 如果设置了继续训练，则加载模型、优化器和学习率调度器状态
     if args.resume:
-        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
+        ckpt_folder_path, runned_epoch = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
         if ckpt_folder_path:
             encoder_path = os.path.join(ckpt_folder_path, "encoder.pt")
             decoder_path = os.path.join(ckpt_folder_path, "decoder.pt")
@@ -120,7 +120,7 @@ def load_model(args):
         else:
             print("No checkpoint folder found. Starting training from scratch.")
 
-    return autoencoder, loss_fn, optimizer, lr_scheduler
+    return autoencoder, loss_fn, optimizer, lr_scheduler, runned_epoch
 
 def train(args):
     # 1. 准备数据
@@ -147,11 +147,11 @@ def train(args):
     # 2. 定义模型, loss function and optimizer
     autoencoder: Autoencoder
     lr_scheduler: ReduceLROnPlateau
-    autoencoder, loss_fn, optimizer, lr_scheduler = load_model(args)
+    autoencoder, loss_fn, optimizer, lr_scheduler, runned_epoch = load_model(args)
     
     # 3. 训练循环
     num_epochs = args.epochs
-    for epoch in range(num_epochs):
+    for epoch in range(runned_epoch, num_epochs):
         autoencoder.train()
         for batch_idx, sample in enumerate(dataloader):
             sample = Sample(**sample)
