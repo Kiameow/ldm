@@ -3,6 +3,7 @@ import json
 import argparse
 import os
 import re
+import torch.nn.functional as F
 
 class ResizeWithPadding:
     def __init__(self, target_size=(256, 256)):
@@ -93,6 +94,36 @@ def get_latest_ckpt_path(dataset_name, save_dir):
     
     # 返回完整的路径
     return os.path.join(save_dir, latest_folder)
+
+def visualize_latents(tensor, target_size):
+    """
+    将输入的 latent tensor 处理成目标大小的单通道图像。
+    
+    参数:
+        tensor (torch.Tensor): 输入张量，形状为 [B, C, H, W]。
+        target_size (tuple): 目标大小，格式为 (height, width)。
+    
+    返回:
+        torch.Tensor: 处理后的张量，形状为 [B, 1, target_height, target_width]。
+    """
+    B, C, H, W = tensor.shape
+    
+    # 自动判断通道数并拼接
+    if C == 4:
+        # 将 4 个通道拼接成 2x2 的网格
+        combined = tensor.view(B, 2, 2, H, W)  # [B, 2, 2, H, W]
+        combined = combined.permute(0, 1, 3, 2, 4).contiguous()  # [B, 2, H, 2, W]
+        combined = combined.view(B, 1, 2 * H, 2 * W)  # [B, 1, 2H, 2W]
+    elif C == 1:
+        # 如果已经是单通道，直接使用
+        combined = tensor
+    else:
+        raise ValueError(f"Unsupported number of channels: {C}. Expected 1 or 4.")
+    
+    # 将图像放缩到目标大小
+    resized = F.interpolate(combined, size=target_size, mode='bilinear', align_corners=False)
+    
+    return resized
     
 
 if __name__ == "__main__":

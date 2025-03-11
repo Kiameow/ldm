@@ -1,11 +1,9 @@
 from random import randint
-from sched import scheduler
-from types import new_class
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from utils import parse_args, get_latest_ckpt_path
+from utils import parse_args, get_latest_ckpt_path, visualize_latents
 from dataloader import OPMEDDataset, Sample
 from ldm import LatentDiffusion
 from unet import UNetModel
@@ -86,19 +84,25 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         # Decode the final latent (which approximates x0) back to image space
         recon_latents = x_t
         recons = ldm.autoencoder_decode(recon_latents)
-
+        
+        v_images = images.to("cpu")
+        v_latents = visualize_latents(latents.to("cpu"), (256, 256))
+        v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
+        v_recons = recons.to("cpu")
+        print(f"original: {v_images.shape}")
+        print(f"ori_latents: {v_latents.shape}")
+        print(f"recon_latents: {v_recon_latents.shape}")
+        print(f"recon: {v_recons.shape}")
         
         # 确保不会超出 batch_size 的范围
         num_images = min(8, images.size(0))
         
-        random_dim_of_z = randint(0, 3)
-        
         # 将解码后的图像和原始图像拼接在一起
         comparison = torch.cat([
-            images[:num_images], 
-            latents[:, random_dim_of_z], 
-            recon_latents[:, random_dim_of_z],
-            recons[:num_images]
+            v_images[:num_images], 
+            v_latents[:num_images], 
+            v_recon_latents[:num_images],
+            v_recons[:num_images]
         ])  # 取前 num_images 张图像进行对比
         comparison = vutils.make_grid(comparison, nrow=num_images, normalize=True, scale_each=True)
         
@@ -106,7 +110,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         plt.figure(figsize=(12, 6))
         plt.imshow(comparison.permute(1, 2, 0).cpu().numpy())
         plt.axis("off")
-        plt.title(f"Epoch {epoch}: Original (Top) vs Decoded (Bottom), z Dim {random_dim_of_z}")
+        plt.title(f"Epoch {epoch}: Original, Latents, ReconLatents, Decoded")
         
         # 保存图像
         sample_dir = os.path.join(args.sample_dir, args.dataset_name)

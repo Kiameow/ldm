@@ -3,3 +3,4 @@ ckpts_ae/*
 datasets/*
 hf_model/*
 __pycache__/*
+*results*
