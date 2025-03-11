@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from utils import parse_args, get_latest_ckpt_path, visualize_latents, tensor_to_PILimage
+from utils import parse_args, get_latest_ckpt_path, visualize_latents, save_tensor_as_png
 from dataloader import OPMEDDataset, Sample
 from ldm import LatentDiffusion
 from unet import UNetModel
@@ -137,9 +137,8 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         
         for key, r in sample_res_dict.items():
             r: torch.Tensor
-            img_r: Image.Image = tensor_to_PILimage(r)
             image_save_path = os.path.join(sample_batch_dir, f"{batch_idx}-{key}.png")
-            img_r.save(image_save_path)
+            save_tensor_as_png(r, image_save_path)
         
         print(f"Sample images saved at {sample_batch_dir}")
     

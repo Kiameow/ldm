@@ -5,7 +5,7 @@ import os
 import re
 import torch.nn.functional as F
 import torch
-from PIL import Image
+import matplotlib.pyplot as plt
 
 class ResizeWithPadding:
     def __init__(self, target_size=(256, 256)):
@@ -131,11 +131,11 @@ def visualize_latents(tensor, target_size):
     
     return resized
 
-def tensor_to_PILimage(tensor: torch.Tensor) -> Image.Image:
-    tensor = (tensor + 1) / 2
-    to_pil = transforms.ToPILImage()
-    image = to_pil(tensor[0])
-    return image
+def save_tensor_as_png(tensor: torch.Tensor, path: str):
+    """Save a tensor as a PNG image using Matplotlib, similar to plt.imshow()."""
+    tensor = tensor[0]
+    tensor = tensor.cpu().detach().permute(1, 2, 0).numpy()  # Convert (C, H, W) -> (H, W, C)
+    plt.imsave(path, tensor)
     
 
 if __name__ == "__main__":
