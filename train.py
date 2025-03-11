@@ -254,7 +254,7 @@ def train(args):
             # print(f"latents: {(latents).shape}")
 
             noisy_latents = alpha_bar_t.sqrt() * latents + (1 - alpha_bar_t).sqrt() * noise
-            print(f"noisy latents: {(noisy_latents).shape}")
+            # print(f"noisy latents: {(noisy_latents).shape}")
             predicted_noise = ldm(noisy_latents, t, context)
             
             # 计算损失
