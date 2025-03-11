@@ -57,20 +57,13 @@ def load_model(args):
  
     ckpt_folder_path, _ = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ckpt_folder_path:
-        encoder_path = os.path.join(ckpt_folder_path, "encoder.pt")
-        decoder_path = os.path.join(ckpt_folder_path, "decoder.pt")
-
-        if os.path.exists(encoder_path):
-            encoder.load_state_dict(torch.load(encoder_path, map_location=device))
-            print(f"Loaded encoder from {encoder_path}")
-        else:
-            print(f"No encoder checkpoint found at {encoder_path}")
+        ae_path = os.path.join(ckpt_folder_path, "ae.pt")
             
-        if os.path.exists(decoder_path):
-            decoder.load_state_dict(torch.load(decoder_path, map_location=device))
-            print(f"Loaded decoder from {decoder_path}")
+        if os.path.exists(ae_path):
+            decoder.load_state_dict(torch.load(ae_path, map_location=device))
+            print(f"Loaded autoencoder from {ae_path}")
         else:
-            print(f"No decoder checkpoint found at {decoder_path}")
+            print(f"No autoencoder checkpoint found at {ae_path}")
     else:
         print("No checkpoint folder found. Starting training from scratch.")
 

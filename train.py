@@ -154,11 +154,9 @@ def load_model(args):
         decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
         autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
         
-        encoder_path = os.path.join(ae_ckpt_folder, "encoder.pt")
-        decoder_path = os.path.join(ae_ckpt_folder, "decoder.pt")
+        ae_path = os.path.join(ae_ckpt_folder, "ae.pt")
         
-        encoder.load_state_dict(torch.load(encoder_path, map_location=device))
-        decoder.load_state_dict(torch.load(decoder_path, map_location=device))
+        autoencoder.load_state_dict(torch.load(ae_path, map_location=device))
         print("Autoencoder ready")
     else:
         raise RuntimeError("No autoencoder ckpt found")
