@@ -4,6 +4,8 @@ import argparse
 import os
 import re
 import torch.nn.functional as F
+import torch
+from PIL import Image
 
 class ResizeWithPadding:
     def __init__(self, target_size=(256, 256)):
@@ -128,6 +130,11 @@ def visualize_latents(tensor, target_size):
     resized = F.interpolate(combined, size=target_size, mode='bilinear', align_corners=False)
     
     return resized
+
+def tensor_to_PILimage(tensor: torch.Tensor, grayscale: bool) -> Image.Image:
+    to_pil = transforms.ToPILImage()
+    image = to_pil(tensor)
+    return image
     
 
 if __name__ == "__main__":

@@ -1,8 +1,10 @@
+from pdb import run
+from random import randint
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from utils import parse_args, get_latest_ckpt_path, visualize_latents
+from utils import parse_args, get_latest_ckpt_path, visualize_latents, tensor_to_PILimage
 from dataloader import OPMEDDataset, Sample
 from ldm import LatentDiffusion
 from unet import UNetModel
@@ -13,10 +15,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
 from dummy_text_embedder import DummyTextEmbedder
+from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, epoch: int, args: dict):
+def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, batch_idx: int, args: dict):
     """
     save the original, original_feature_map, recon_feature_map, recon
     
@@ -90,6 +93,14 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
         v_recons = recons.to("cpu")
         v_ori_decoded = ori_decoded.to("cpu")
+        sample_res_dict = {
+            "original": v_images, 
+            "ori_latent": v_latents, 
+            "recon_latent": v_recon_latents, 
+            "recon": v_recons, 
+            "ori_decoded": v_ori_decoded
+        }
+        
         # print(f"original: {v_images.shape}")
         # print(f"ori_latents: {v_latents.shape}")
         # print(f"recon_latents: {v_recon_latents.shape}")
@@ -112,17 +123,26 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         plt.figure(figsize=(12, 6))
         plt.imshow(comparison.permute(1, 2, 0).cpu().numpy())
         plt.axis("off")
-        plt.title(f"Epoch {epoch}: Original, Latents, ReconLatents, Decoded, OriDecoded")
+        plt.title(f"Batch {batch_idx}: Original, Latents, ReconLatents, Decoded, OriDecoded")
         
         # 保存图像
         sample_dir = os.path.join(args.sample_dir, args.dataset_name)
         os.makedirs(sample_dir, exist_ok=True)
-        save_path = os.path.join(sample_dir, f"sample_epoch_{epoch}.png")
-        plt.savefig(save_path, bbox_inches="tight", pad_inches=0.1)
+        sample_batch_dir = os.path.join(sample_dir, batch_idx)
+        os.makedirs(sample_batch_dir, exist_ok=True)
+        
+        save_comp_path = os.path.join(sample_dir, f"{batch_idx}-comparison.png")
+        plt.savefig(save_comp_path, bbox_inches="tight", pad_inches=0.1)
         plt.close()
-        print(f"Sample images saved at {save_path}")
+        
+        for key, r in sample_res_dict:
+            r: torch.Tensor
+            img_r: Image.Image = tensor_to_PILimage(r)
+            image_save_path = os.path.join(sample_batch_dir, f"{batch_idx}-{key}.png")
+            img_r.save(image_save_path)
+        
+        print(f"Sample images saved at {sample_batch_dir}")
     
-    ldm.train()  # 设回训练模式
 
 def load_model(args):
     unet = UNetModel(
@@ -185,32 +205,12 @@ def load_model(args):
         linear_end=0.012  # 示例值
     ).to(device)
     
-    loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(ldm.model.parameters(), lr=args.initial_lr)
-    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
-    
-    return ldm, loss_fn, optimizer, lr_scheduler, runned_epoch
-
-def save_model(unet: UNetModel, optimizer: optim.Adam, epoch, args):
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
-        
-    new_ckpt_path = os.path.join(args.save_dir, f"ckpt-{args.dataset_name}-{epoch}")
-    os.makedirs(new_ckpt_path, exist_ok=True)
-    
-    torch.save(unet.state_dict(), os.path.join(new_ckpt_path, f"unet.pt"))
-    torch.save(optimizer.state_dict(), os.path.join(new_ckpt_path, f"opt.pt"))
+    return ldm
 
 
-def train(args):
+def eval(args):
     # 1. 准备数据
     if args.dataset_name == "opmed":
-        dataset = OPMEDDataset(
-            root_dir=args.dataset_root,
-            modality="FLAIR",
-            train=True,
-            img_size=(256, 256)
-        )
         dataset_test = OPMEDDataset(
             root_dir=args.dataset_root,
             modality="FLAIR",
@@ -220,81 +220,24 @@ def train(args):
     else:
         raise RuntimeError(f"dataset {args.dataset_name} is not implemented yet.")
     
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
     dataloader_test = DataLoader(dataset_test, batch_size=args.sample_batch_size, shuffle=True, num_workers=2, pin_memory=True)
-    dataloader_test_iter = iter(dataloader_test)
     
     print(f"Dataloader for {args.dataset_name} ready")
     
     # 2. 定义模型, loss function and optimizer
     ldm: LatentDiffusion
     lr_scheduler: ReduceLROnPlateau
-    ldm, loss_fn, optimizer, lr_scheduler, runned_epoch = load_model(args)
-    
-    
-    # 4. 训练循环
-    num_epochs = args.epochs
-    for epoch in range(runned_epoch if runned_epoch else 0, num_epochs):
-        ldm.train()
-        for batch_idx, sample in enumerate(dataloader):
-            sample = Sample(**sample)
-            images = sample.img.to(ldm.device)
-            
-            # 获取文本条件（假设你有文本数据）
-            prompts = sample.prompt
-            context = ldm.get_text_conditioning(prompts)
-            
-            # 编码图像到潜在空间
-            latents = ldm.autoencoder_encode(images)
-            
-            # 随机生成时间步
-            t = torch.randint(0, ldm.n_steps, (images.size(0),), device=ldm.device).long()
-            
-            # 前向传播
-            noise = torch.randn_like(latents, device=ldm.device)
-            alpha_bar_t = ldm.alpha_bar[t].view(-1, 1, 1, 1)
-            # print(f"noise: {noise.shape}")
-            # print(f"t shape: {alpha_bar_t.sqrt().shape}")
-            # print(f"latents: {(latents).shape}")
-
-            noisy_latents = alpha_bar_t.sqrt() * latents + (1 - alpha_bar_t).sqrt() * noise
-            # print(f"noisy latents: {(noisy_latents).shape}")
-            predicted_noise = ldm(noisy_latents, t, context)
-            
-            # 计算损失
-            loss = loss_fn(predicted_noise, noise)
-            loss = loss / args.accumulation_steps
-            loss.backward()
-            
-            # 反向传播和优化
-            if (batch_idx + 1) % args.accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()
-            
-            if batch_idx % args.output_interval == 0:
-                print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
-                
-        lr_scheduler.step(loss)
-        print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
-
-
-        if (epoch + 1) % args.sample_interval == 0:
-            try:
-                test_sample = next(dataloader_test_iter)
-            except:
-                dataloader_test_iter = iter(dataloader_test)
-                test_sample = next(dataloader_test_iter)
-
-            test_sample = Sample(**test_sample)
-            test_images = test_sample.img.to(device)
-            save_sample_images(ldm, test_images, "healthy", epoch + 1, args)
-        if (epoch + 1) % args.save_interval == 0:
-            save_model(ldm.model, optimizer, epoch + 1, args)
-            
-            
+    ldm = load_model(args)
+    ldm.eval()
+    for batch_idx, sample in enumerate(dataloader_test):
+        sample = Sample(**sample)
+        test_images = sample.img.to(ldm.device)
+        
+        # 获取文本条件（假设你有文本数据）
+        prompts = sample.prompt
+        save_sample_images(ldm, test_images, "healthy", batch_idx + 1, args)
 
 if __name__ == "__main__":
     args = parse_args()
-    print(f"Batch size: {args.batch_size}")
-    print(f"Learning rate: {args.initial_lr}")
-    train(args=args)
+    print(f"Start Evaluation for ldm")
+    eval(args=args)
