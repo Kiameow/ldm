@@ -166,7 +166,10 @@ def load_model(args):
     
     if args.resume:
         ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_dir)
-        unet.load_state_dict(torch.load(os.path.join(ckpt_folder_path, "unet.pt"), map_location=device))
+        if ckpt_folder_path is None:
+            print("start new training for ldm/unet")
+        else:
+            unet.load_state_dict(torch.load(os.path.join(ckpt_folder_path, "unet.pt"), map_location=device))
         
     ldm = LatentDiffusion(
         unet_model=unet,
