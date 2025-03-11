@@ -73,6 +73,11 @@ class OPMEDDataset(Dataset):
             # Create a black mask (all zeros) with the same shape as the image
             mask = Image.new("L", (img.width, img.height), 0)
             
+        if is_positive:
+            sample.prompt = "diseased"
+        else:
+            sample.prompt = "healthy"
+            
         # Apply transforms if specified
         if not self.transform:
             self.transform = transforms.Compose([

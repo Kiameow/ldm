@@ -52,7 +52,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='args/01.json', help='Path to the config file')
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
-    parser.add_argument("--initial_lr", type=float, default=1e-4, help="Initial learning rate")
+    parser.add_argument("--initial_lr", type=float, default=1e-3, help="Initial learning rate")
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs to train")
     parser.add_argument("--output_interval", type=int, default=10, help="debug info show")
     parser.add_argument("--save_interval", type=int, default=10, help="Save model every N epochs")
@@ -61,6 +61,8 @@ def parse_args():
     parser.add_argument("--ae_sample_dir", type=str, default="results_ae", help="Directory to save ae samples")
     parser.add_argument("--resume", action="store_true", help="Resume training from the latest checkpoint")
     parser.add_argument("--accumulation_steps", type=int, default=4, help="accumulation step")
+    parser.add_argument("--ldm_sample_t", type=int, default=100, help="ldm add noise and denoise step")
+    parser.add_argument("--sample_batch_size", type=int, default=1, help="sample batch size")
     args = parser.parse_args()
 
     # 读取 JSON 配置

@@ -1,3 +1,4 @@
+from random import randint
 from sched import scheduler
 from types import new_class
 import torch
@@ -12,8 +13,109 @@ from labml_nn.diffusion.stable_diffusion.model.autoencoder import Autoencoder, E
 from labml_nn.diffusion.stable_diffusion.model.clip_embedder import CLIPTextEmbedder
 import os
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+import matplotlib.pyplot as plt
+import torchvision.utils as vutils
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, epoch: int, args: dict):
+    """
+    save the original, original_feature_map, recon_feature_map, recon
+    
+    :param ldm: Autoencoder 模型
+    :param images: 原始图像张量，形状为 [batch_size, channels, height, width]
+    :param epoch: 当前 epoch
+    :param args
+    """
+    ldm.eval()  # switch to evaluation mode
+    with torch.no_grad():
+        # Duplicate prompt for each image and get text conditioning
+        prompts = [prompt] * images.size(0)
+        context = ldm.get_text_conditioning(prompts)
+
+        # Encode the original images into latent space
+        latents = ldm.autoencoder_encode(images)
+
+        # Choose the starting timestep T (e.g., provided by args.ldm_sample_t)
+        T = args.ldm_sample_t
+
+        # Forward process: add noise to obtain x_T
+        noise = torch.randn_like(latents, device=ldm.device)
+        alpha_bar_T = ldm.alpha_bar[T].view(-1, 1, 1, 1)
+        x_t = alpha_bar_T.sqrt() * latents + (1 - alpha_bar_T).sqrt() * noise
+
+        # Set eta to control stochasticity: eta=0 yields a deterministic reverse process
+        eta = 0.0
+
+        # Reverse diffusion: iteratively denoise from t = T down to 1
+        for t in reversed(range(1, T+1)):
+            # Create a tensor filled with the current timestep for the batch
+            t_tensor = torch.full((x_t.size(0),), t, device=ldm.device, dtype=torch.long)
+            
+            # Predict the noise component using the trained diffusion model
+            predicted_noise = ldm(x_t, t_tensor, context)
+            
+            # Get alpha_bar for the current timestep and for t-1
+            alpha_bar_t = ldm.alpha_bar[t].view(-1, 1, 1, 1)
+            if t > 1:
+                alpha_bar_t_minus_1 = ldm.alpha_bar[t-1].view(-1, 1, 1, 1)
+            else:
+                alpha_bar_t_minus_1 = torch.ones_like(alpha_bar_t)
+            
+            # Compute the deterministic estimate of x0 from x_t
+            x0_est = (x_t - (1 - alpha_bar_t).sqrt() * predicted_noise) / alpha_bar_t.sqrt()
+            
+            # Compute the mean for the reverse step (following DDPM update)
+            mean_x = (
+                alpha_bar_t_minus_1.sqrt() * x0_est +
+                ((1 - alpha_bar_t_minus_1).sqrt() - eta * ( (1 - alpha_bar_t_minus_1) / (1 - alpha_bar_t) * (1 - alpha_bar_t / alpha_bar_t_minus_1) )**0.5) * predicted_noise
+            )
+            
+            # Compute sigma_t: if eta==0, then sigma_t becomes 0 (deterministic)
+            if t > 1:
+                beta_t = 1 - ldm.alpha_bar[t] / ldm.alpha_bar[t-1]
+                sigma_t = eta * (beta_t * (1 - alpha_bar_t_minus_1) / (1 - alpha_bar_t))**0.5
+            else:
+                sigma_t = 0.0
+            
+            # Sample x_{t-1}: if sigma_t is 0, this is a deterministic update
+            noise_term = sigma_t * torch.randn_like(x_t, device=ldm.device) if t > 1 else 0.0
+            x_t = mean_x + noise_term
+
+        # Decode the final latent (which approximates x0) back to image space
+        recon_latents = x_t
+        recons = ldm.autoencoder_decode(recon_latents)
+
+        
+        # 确保不会超出 batch_size 的范围
+        num_images = min(8, images.size(0))
+        
+        random_dim_of_z = randint(0, 3)
+        
+        # 将解码后的图像和原始图像拼接在一起
+        comparison = torch.cat([
+            images[:num_images], 
+            latents[:, random_dim_of_z], 
+            recon_latents[:, random_dim_of_z],
+            recons[:num_images]
+        ])  # 取前 num_images 张图像进行对比
+        comparison = vutils.make_grid(comparison, nrow=num_images, normalize=True, scale_each=True)
+        
+        # 将张量转换为图像并保存
+        plt.figure(figsize=(12, 6))
+        plt.imshow(comparison.permute(1, 2, 0).cpu().numpy())
+        plt.axis("off")
+        plt.title(f"Epoch {epoch}: Original (Top) vs Decoded (Bottom), z Dim {random_dim_of_z}")
+        
+        # 保存图像
+        sample_dir = os.path.join(args.sample_dir, args.dataset_name)
+        os.makedirs(sample_dir, exist_ok=True)
+        save_path = os.path.join(sample_dir, f"sample_epoch_{epoch}.png")
+        plt.savefig(save_path, bbox_inches="tight", pad_inches=0.1)
+        plt.close()
+        print(f"Sample images saved at {save_path}")
+    
+    ldm.train()  # 设回训练模式
 
 def load_model(args):
     unet = UNetModel(
@@ -94,10 +196,18 @@ def train(args):
             train=True,
             img_size=(256, 256)
         )
+        dataset_test = OPMEDDataset(
+            root_dir=args.dataset_root,
+            modality="FLAIR",
+            train=False,
+            img_size=(256, 256)
+        )
     else:
         raise RuntimeError(f"dataset {args.dataset_name} is not implemented yet.")
     
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
+    dataloader_test = DataLoader(dataset_test, batch_size=args.sample_batch_size, shuffle=True, num_workers=2, pin_memory=True)
+    dataloader_test_iter = iter(dataloader_test)
     
     # 2. 定义模型, loss function and optimizer
     ldm: LatentDiffusion
@@ -114,7 +224,7 @@ def train(args):
             images = sample.img.to(ldm.device)
             
             # 获取文本条件（假设你有文本数据）
-            prompts = ["example prompt"] * images.size(0)  # 你需要提供实际的文本提示
+            prompts = sample.prompt
             context = ldm.get_text_conditioning(prompts)
             
             # 编码图像到潜在空间
@@ -144,8 +254,21 @@ def train(args):
         lr_scheduler.step(loss)
         print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
 
+
+        if (epoch + 1) % args.sample_interval == 0:
+            try:
+                test_sample = next(dataloader_test_iter)
+            except:
+                dataloader_test_iter = iter(dataloader_test)
+                test_sample = next(dataloader_test_iter)
+
+            test_sample = Sample(**test_sample)
+            test_images = test_sample.img.to(device)
+            save_sample_images(ldm, test_images, "healthy", epoch + 1, args)
         if (epoch + 1) % args.save_interval == 0:
             save_model(ldm.unet_model, optimizer, epoch + 1, args)
+            
+            
 
 if __name__ == "__main__":
     args = parse_args()

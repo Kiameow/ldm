@@ -29,7 +29,7 @@ class LatentDiffusion(nn.Module):
                  n_steps: int,
                  linear_start: float,
                  linear_end: float,
-                 ):
+                ):
         
         super().__init__()
         
