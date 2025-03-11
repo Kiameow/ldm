@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from utils import parse_args, get_latest_ckpt_path
 from dataloader import OPMEDDataset, Sample
 from ldm import LatentDiffusion
-from labml_nn.diffusion.stable_diffusion.model.unet import UNetModel
+from unet import UNetModel
 from labml_nn.diffusion.stable_diffusion.model.autoencoder import Autoencoder, Encoder, Decoder
 from labml_nn.diffusion.stable_diffusion.model.clip_embedder import CLIPTextEmbedder
 import os
@@ -124,7 +124,7 @@ def load_model(args):
         out_channels=4,         # 输出通道数（与输入相同）
         channels=128,           # 基础通道数
         n_res_blocks=2,         # 每个分辨率级别的残差块数量
-        attention_levels=[1, 2],# 在第 1 和第 2 个分辨率级别上应用注意力
+        attention_levels=[],    # No attention applied
         channel_multipliers=[1, 2, 4, 8],  # 通道数倍增因子
         n_heads=8,              # 多头注意力机制的头数
         tf_layers=1,            # Transformer 层数
@@ -248,7 +248,13 @@ def train(args):
             
             # 前向传播
             noise = torch.randn_like(latents, device=ldm.device)
-            noisy_latents = ldm.alpha_bar[t].sqrt() * latents + (1 - ldm.alpha_bar[t]).sqrt() * noise
+            alpha_bar_t = ldm.alpha_bar[t].view(-1, 1, 1, 1)
+            # print(f"noise: {noise.shape}")
+            # print(f"t shape: {alpha_bar_t.sqrt().shape}")
+            # print(f"latents: {(latents).shape}")
+
+            noisy_latents = alpha_bar_t.sqrt() * latents + (1 - alpha_bar_t).sqrt() * noise
+            print(f"noisy latents: {(noisy_latents).shape}")
             predicted_noise = ldm(noisy_latents, t, context)
             
             # 计算损失

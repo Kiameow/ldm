@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from labml_nn.diffusion.stable_diffusion.model.autoencoder import Autoencoder
 from labml_nn.diffusion.stable_diffusion.model.clip_embedder import CLIPTextEmbedder
-from labml_nn.diffusion.stable_diffusion.model.unet import UNetModel
+from unet import UNetModel
 
 
 class DiffusionWrapper(nn.Module):
