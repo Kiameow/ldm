@@ -134,8 +134,20 @@ def visualize_latents(tensor, target_size):
 def save_tensor_as_png(tensor: torch.Tensor, path: str):
     """Save a tensor as a PNG image using Matplotlib, similar to plt.imshow()."""
     tensor = tensor[0]
-    tensor = tensor.cpu().detach().permute(1, 2, 0).numpy()  # Convert (C, H, W) -> (H, W, C)
-    plt.imsave(path, tensor)
+    tensor = tensor.cpu().detach()
+
+    # If tensor is (C, H, W), we need to permute it to (H, W, C)
+    if tensor.ndim == 3 and tensor.shape[0] in [1, 3]:  
+        tensor = tensor.permute(1, 2, 0)  # Convert (C, H, W) -> (H, W, C)
+
+    # If tensor is grayscale (1 channel), remove extra dimension
+    if tensor.shape[-1] == 1:  
+        tensor = tensor.squeeze(-1)  # Convert (H, W, 1) -> (H, W)
+
+    # Ensure tensor values are in [0, 1]
+    tensor = (tensor - tensor.min()) / (tensor.max() - tensor.min())
+
+    plt.imsave(path, tensor, cmap="gray" if tensor.ndim == 2 else None)
     
 
 if __name__ == "__main__":
