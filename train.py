@@ -84,11 +84,13 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         # Decode the final latent (which approximates x0) back to image space
         recon_latents = x_t
         recons = ldm.autoencoder_decode(recon_latents)
+        ori_decoded = ldm.autoencoder_decode(latents)
         
         v_images = images.to("cpu")
         v_latents = visualize_latents(latents.to("cpu"), (256, 256))
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
         v_recons = recons.to("cpu")
+        v_ori_decoded = ori_decoded.to("cpu")
         # print(f"original: {v_images.shape}")
         # print(f"ori_latents: {v_latents.shape}")
         # print(f"recon_latents: {v_recon_latents.shape}")
@@ -102,7 +104,8 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
             v_images[:num_images], 
             v_latents[:num_images], 
             v_recon_latents[:num_images],
-            v_recons[:num_images]
+            v_recons[:num_images],
+            v_ori_decoded[:num_images]
         ])  # 取前 num_images 张图像进行对比
         comparison = vutils.make_grid(comparison, nrow=num_images, normalize=True, scale_each=True)
         
@@ -110,7 +113,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         plt.figure(figsize=(12, 6))
         plt.imshow(comparison.permute(1, 2, 0).cpu().numpy())
         plt.axis("off")
-        plt.title(f"Epoch {epoch}: Original, Latents, ReconLatents, Decoded")
+        plt.title(f"Epoch {epoch}: Original, Latents, ReconLatents, Decoded, OriDecoded")
         
         # 保存图像
         sample_dir = os.path.join(args.sample_dir, args.dataset_name)
