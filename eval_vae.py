@@ -55,7 +55,7 @@ def load_model(args):
     decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
     autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
  
-    ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
+    ckpt_folder_path, _ = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ckpt_folder_path:
         encoder_path = os.path.join(ckpt_folder_path, "encoder.pt")
         decoder_path = os.path.join(ckpt_folder_path, "decoder.pt")

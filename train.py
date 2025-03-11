@@ -148,7 +148,7 @@ def load_model(args):
         else:
             print("CLIP ready")
     
-    ae_ckpt_folder = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
+    ae_ckpt_folder, runned_epoch = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ae_ckpt_folder and os.path.exists(ae_ckpt_folder):
         encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=4)
         decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
@@ -172,7 +172,7 @@ def load_model(args):
         param.requires_grad_(False)
     
     if args.resume:
-        ckpt_folder_path = get_latest_ckpt_path(args.dataset_name, args.save_dir)
+        ckpt_folder_path, runned_epoch = get_latest_ckpt_path(args.dataset_name, args.save_dir)
         if ckpt_folder_path is None:
             print("start new training for ldm/unet")
         else:
