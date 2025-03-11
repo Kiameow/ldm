@@ -60,7 +60,7 @@ def load_model(args):
         ae_path = os.path.join(ckpt_folder_path, "ae.pt")
             
         if os.path.exists(ae_path):
-            decoder.load_state_dict(torch.load(ae_path, map_location=device))
+            autoencoder.load_state_dict(torch.load(ae_path, map_location=device))
             print(f"Loaded autoencoder from {ae_path}")
         else:
             print(f"No autoencoder checkpoint found at {ae_path}")
