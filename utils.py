@@ -53,7 +53,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='args/01.json', help='Path to the config file')
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
-    parser.add_argument("--initial_lr", type=float, default=1e-3, help="Initial learning rate")
+    parser.add_argument("--initial_lr", type=float, default=1e-4, help="Initial learning rate")
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs to train")
     parser.add_argument("--output_interval", type=int, default=10, help="debug info show")
     parser.add_argument("--save_interval", type=int, default=10, help="Save model every N epochs")
