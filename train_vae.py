@@ -144,7 +144,7 @@ def train(args):
     
     # 3. 训练循环
     num_epochs = args.epochs
-    for epoch in range(runned_epoch, num_epochs):
+    for epoch in range(runned_epoch if runned_epoch else 0, num_epochs):
         autoencoder.train()
         for batch_idx, sample in enumerate(dataloader):
             sample = Sample(**sample)
