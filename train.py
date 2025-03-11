@@ -173,7 +173,16 @@ def load_model(args):
         if ckpt_folder_path is None:
             print("start new training for ldm/unet")
         else:
-            unet.load_state_dict(torch.load(os.path.join(ckpt_folder_path, "unet.pt"), map_location=device))
+            # Load the entire wrapper checkpoint
+            wrapper_state = torch.load(os.path.join(ckpt_folder_path, "unet.pt"), map_location=device)
+            # Extract the unet state dict by stripping the prefix
+            unet_state_dict = {
+                key.replace("diffusion_model.", ""): value
+                for key, value in wrapper_state.items()
+                if key.startswith("diffusion_model.")
+            }
+            # Load into your unet
+            unet.load_state_dict(unet_state_dict)
         
     ldm = LatentDiffusion(
         unet_model=unet,
