@@ -19,12 +19,13 @@ from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, batch_idx: int, args: dict):
+def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.Tensor, prompt: str, batch_idx: int, args: dict):
     """
     save the original, original_feature_map, recon_feature_map, recon
     
     :param ldm: Autoencoder 模型
     :param images: 原始图像张量，形状为 [batch_size, channels, height, width]
+    :param masks: masks of the samples
     :param epoch: 当前 epoch
     :param args
     """
@@ -92,13 +93,16 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         v_latents = visualize_latents(latents.to("cpu"), (256, 256))
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
         v_recons = recons.to("cpu")
+        v_residuals = torch.abs(v_images - v_recons)
         v_ori_decoded = ori_decoded.to("cpu")
         sample_res_dict = {
             "original": v_images, 
             "ori_latent": v_latents, 
             "recon_latent": v_recon_latents, 
             "recon": v_recons, 
-            "ori_decoded": v_ori_decoded
+            "ori_decoded": v_ori_decoded,
+            "residual": v_residuals,
+            "mask": masks
         }
         
         # print(f"original: {v_images.shape}")
@@ -232,16 +236,20 @@ def eval(args):
     
     # 2. 定义模型, loss function and optimizer
     ldm: LatentDiffusion
-    lr_scheduler: ReduceLROnPlateau
     ldm = load_model(args)
     ldm.eval()
     for batch_idx, sample in enumerate(dataloader_test):
         sample = Sample(**sample)
         test_images = sample.img.to(ldm.device)
-        
-        # 获取文本条件（假设你有文本数据）
-        prompts = sample.prompt
-        save_sample_images(ldm, test_images, "healthy", batch_idx + 1, args)
+        masks = sample.mask
+        save_sample_images(
+            ldm=ldm, 
+            images=test_images,
+            masks=masks,
+            prompt="healthy",
+            batch_idx=batch_idx + 1,
+            args=args
+        )
 
 if __name__ == "__main__":
     args = parse_args()
