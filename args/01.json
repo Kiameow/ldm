@@ -1,13 +1,13 @@
 {
     "batch_size": 4,
     "learning_rate": 0.001,
-    "epochs": 100,
+    "epochs": 2000,
     "dataset_root": "datasets/opmed",
     "dataset_name": "opmed",
     "save_dir": "ckpts",
     "save_ae_dir": "ckpts_ae",
     "ae_sample_dir": "results_ae",
-    "save_interval": 25,
-    "sample_interval": 2,
-    "resume": true
+    "save_interval": 100,
+    "sample_interval": 10,
+    "resume": false
 }
