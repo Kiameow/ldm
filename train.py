@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 import torchvision.utils as vutils
 from dummy_text_embedder import DummyTextEmbedder
+import statistics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -254,6 +255,7 @@ def train(args):
     num_epochs = args.epochs
     for epoch in range(runned_epoch if runned_epoch else 0, num_epochs):
         ldm.train()
+        epoch_loss = []
         for batch_idx, sample in enumerate(dataloader):
             sample = Sample(**sample)
             images = sample.img.to(ldm.device)
@@ -287,6 +289,8 @@ def train(args):
             loss = loss / args.accumulation_steps
             loss.backward()
             
+            epoch_loss.append(loss.item())
+            
             # 反向传播和优化
             if (batch_idx + 1) % args.accumulation_steps == 0:
                 optimizer.step()
@@ -294,8 +298,8 @@ def train(args):
             
             if batch_idx % args.output_interval == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
-                
-        lr_scheduler.step(loss)
+        
+        lr_scheduler.step(statistics.mean(epoch_loss))
         print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
 
 
