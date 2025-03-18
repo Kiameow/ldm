@@ -56,6 +56,7 @@ class SpatialTransformer(nn.Module):
         """
         # Get shape `[batch_size, channels, height, width]`
         b, c, h, w = x.shape
+        print(x.shape)
         # For residual connection
         x_in = x
         # Normalize
@@ -158,8 +159,8 @@ class CrossAttention(nn.Module):
             # You can install flash attention by cloning their Github repo,
             # [https://github.com/HazyResearch/flash-attention](https://github.com/HazyResearch/flash-attention)
             # and then running `python setup.py install`
-            # from flash_attn.flash_attention import FlashAttention
-            # self.flash = FlashAttention()
+            from flash_attn.flash_attention import FlashAttention
+            self.flash = FlashAttention()
             # Set the scale for scaled dot-product attention.
             self.flash.softmax_scale = self.scale
         # Set to `None` if it's not installed
