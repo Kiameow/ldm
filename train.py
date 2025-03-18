@@ -202,7 +202,7 @@ def load_model(args):
     
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(ldm.model.parameters(), lr=args.initial_lr)
-    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=1)
     
     return ldm, loss_fn, optimizer, lr_scheduler, runned_epoch
 
