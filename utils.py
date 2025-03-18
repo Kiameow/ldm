@@ -68,6 +68,7 @@ def parse_args():
     parser.add_argument("--ldm_sample_t", type=int, default=100, help="ldm add noise and denoise step")
     parser.add_argument("--sample_batch_size", type=int, default=1, help="sample batch size")
     parser.add_argument("--no_clip", type=bool, default=True, help="whether to use clip")
+    parser.add_argument("--no_text", type=bool, default=True, help="whether to use text conditioning")
     args = parser.parse_args()
 
     # 读取 JSON 配置

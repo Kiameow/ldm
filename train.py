@@ -29,7 +29,10 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
     with torch.no_grad():
         # Duplicate prompt for each image and get text conditioning
         prompts = [prompt] * images.size(0)
-        context = ldm.get_text_conditioning(prompts)
+        if args.no_text:
+            context = None
+        else:
+            context = ldm.get_text_conditioning(prompts)
 
         # Encode the original images into latent space
         latents = ldm.autoencoder_encode(images)
@@ -132,7 +135,7 @@ def load_model(args):
         n_res_blocks=2,         # 每个分辨率级别的残差块数量
         attention_levels=[],    # No attention applied
         channel_multipliers=[1, 2, 4, 8],  # 通道数倍增因子
-        n_heads=8,              # 多头注意力机制的头数
+        n_heads=1,              # 多头注意力机制的头数
         tf_layers=1,            # Transformer 层数
         d_cond=768              # 条件嵌入维度（与 CLIP 一致）
     )
@@ -218,6 +221,7 @@ def train(args):
             root_dir=args.dataset_root,
             modality="FLAIR",
             train=True,
+            type="healthy",
             img_size=(256, 256)
         )
         dataset_test = OPMEDDataset(
@@ -234,6 +238,8 @@ def train(args):
     dataloader_test_iter = iter(dataloader_test)
     
     print(f"Dataloader for {args.dataset_name} ready")
+    print(f"Train dataset num of batch: {len(dataloader)}")
+    print(f"Test dataset num of batch: {len(dataloader_test)} (Infinite Loop)")
     
     # 2. 定义模型, loss function and optimizer
     ldm: LatentDiffusion
@@ -251,7 +257,10 @@ def train(args):
             
             # 获取文本条件（假设你有文本数据）
             prompts = sample.prompt
-            context = ldm.get_text_conditioning(prompts)
+            if args.no_text:
+                context = None
+            else:
+                context = ldm.get_text_conditioning(prompts)
             
             # 编码图像到潜在空间
             latents = ldm.autoencoder_encode(images)
