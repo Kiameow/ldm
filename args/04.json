@@ -8,7 +8,7 @@
     "save_ae_dir": "ckpts_ae",
     "ae_sample_dir": "results_ae",
     "save_interval": 100,
-    "sample_interval": 10,
+    "sample_interval": 1,
     "resume": false,
     "ae_dim": 2
 }
