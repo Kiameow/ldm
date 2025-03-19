@@ -153,16 +153,16 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
 
 def load_model(args):
     unet = UNetModel(
-        in_channels=4,          # 输入通道数（潜在空间的通道数）
-        out_channels=4,         # 输出通道数（与输入相同）
+        in_channels=args.ae_dim,          # 输入通道数（潜在空间的通道数）
+        out_channels=args.ae_dim,         # 输出通道数（与输入相同）
         channels=128,           # 基础通道数
         n_res_blocks=2,         # 每个分辨率级别的残差块数量
-        attention_levels=[],    # No attention applied
+        attention_levels=[1, 2],    # No attention applied
         channel_multipliers=[1, 2, 4, 8],  # 通道数倍增因子
-        n_heads=1,              # 多头注意力机制的头数
+        n_heads=8,              # 多头注意力机制的头数
         tf_layers=1,            # Transformer 层数
         d_cond=768              # 条件嵌入维度（与 CLIP 一致）
-    )
+    ).to(device)
     
     if args.no_clip:
         clip = DummyTextEmbedder(d_cond=768).to(device)
