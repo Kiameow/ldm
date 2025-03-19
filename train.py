@@ -18,6 +18,7 @@ import statistics
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def draw_training_process(train_losses, test_losses, save_path, sample_interval):
+    os.makedirs(save_path, exist_ok=True)
     plt.figure(figsize=(12, 6))
 
     # Adjust x-axis for test loss since it's recorded every sample_interval epochs
