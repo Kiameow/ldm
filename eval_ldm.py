@@ -33,7 +33,10 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.
     with torch.no_grad():
         # Duplicate prompt for each image and get text conditioning
         prompts = [prompt] * images.size(0)
-        context = ldm.get_text_conditioning(prompts)
+        if args.no_text:
+            context = None
+        else:
+            context = ldm.get_text_conditioning(prompts)
 
         # Encode the original images into latent space
         latents = ldm.autoencoder_encode(images)
