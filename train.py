@@ -17,6 +17,25 @@ import statistics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def draw_training_process(train_losses, test_losses, save_path, sample_interval):
+    plt.figure(figsize=(12, 6))
+
+    # Adjust x-axis for test loss since it's recorded every sample_interval epochs
+    test_epochs = list(range(sample_interval, sample_interval * len(test_losses) + 1, sample_interval))
+
+    # Plot Training and Test Loss
+    plt.subplot(2, 2, 1)
+    plt.plot(range(1, len(train_losses) + 1), train_losses, label='Training Loss')
+    plt.plot(test_epochs, test_losses, label='Test Loss', marker='o')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Test Loss')
+    plt.legend()
+
+    plt.tight_layout()
+    save_path = os.path.join(save_path, "metrics_plot.png")
+    plt.savefig(save_path)
+
 def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, epoch: int, args: dict):
     """
     save the original, original_feature_map, recon_feature_map, recon
@@ -89,6 +108,9 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         recons = ldm.autoencoder_decode(recon_latents)
         ori_decoded = ldm.autoencoder_decode(latents)
         
+        loss_fn = nn.MSELoss()
+        test_loss = loss_fn(recons, images).item()
+        
         v_images = images.to("cpu")
         v_latents = visualize_latents(latents.to("cpu"), (256, 256))
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
@@ -127,6 +149,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, prompt: str, 
         print(f"Sample images saved at {save_path}")
     
     ldm.train()  # 设回训练模式
+    return test_loss
 
 def load_model(args):
     unet = UNetModel(
@@ -253,6 +276,8 @@ def train(args):
     
     # 4. 训练循环
     num_epochs = args.epochs
+    train_losses = []
+    test_losses = []
     for epoch in range(runned_epoch if runned_epoch else 0, num_epochs):
         ldm.train()
         epoch_loss = []
@@ -298,9 +323,10 @@ def train(args):
             
             if batch_idx % args.output_interval == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Batch [{batch_idx}/{len(dataloader)}], Loss: {loss.item():.4f}")
-        
+        train_losses.append(statistics.mean(epoch_loss))
         lr_scheduler.step(statistics.mean(epoch_loss))
         print(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
+        
 
 
         if (epoch + 1) % args.sample_interval == 0:
@@ -312,10 +338,12 @@ def train(args):
 
             test_sample = Sample(**test_sample)
             test_images = test_sample.img.to(device)
-            save_sample_images(ldm, test_images, "healthy", epoch + 1, args)
+            test_loss = save_sample_images(ldm, test_images, "healthy", epoch + 1, args)
+            test_losses.append(test_loss)
         if (epoch + 1) % args.save_interval == 0:
             save_model(ldm.model, optimizer, epoch + 1, args)
             
+        draw_training_process(train_losses, test_losses, os.path.join(args.sample_dir, args.dataset_name), args.sample_interval)
             
 
 if __name__ == "__main__":

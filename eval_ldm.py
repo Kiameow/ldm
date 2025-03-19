@@ -45,6 +45,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.
         noise = torch.randn_like(latents, device=ldm.device)
         alpha_bar_T = ldm.alpha_bar[T].view(-1, 1, 1, 1)
         x_t = alpha_bar_T.sqrt() * latents + (1 - alpha_bar_T).sqrt() * noise
+        noisy_ori = x_t
 
         # Set eta to control stochasticity: eta=0 yields a deterministic reverse process
         eta = 0.0
@@ -89,6 +90,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.
         recons = ldm.autoencoder_decode(recon_latents)
         ori_decoded = ldm.autoencoder_decode(latents)
         
+        v_noisy_ori = noisy_ori.to("cpu")
         v_images = images.to("cpu")
         v_latents = visualize_latents(latents.to("cpu"), (256, 256))
         v_recon_latents = visualize_latents(recon_latents.to("cpu"), (256, 256))
@@ -96,6 +98,7 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.
         v_residuals = torch.abs(v_images - v_recons)
         v_ori_decoded = ori_decoded.to("cpu")
         sample_res_dict = {
+            "noisy_original": v_noisy_ori,
             "original": v_images, 
             "ori_latent": v_latents, 
             "recon_latent": v_recon_latents, 
