@@ -10,5 +10,5 @@
     "save_interval": 100,
     "sample_interval": 10,
     "resume": false,
-    "ae_dim": 2
+    "ae_dim": 4
 }
