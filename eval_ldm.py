@@ -45,7 +45,8 @@ def save_sample_images(ldm: LatentDiffusion, images: torch.Tensor, masks: torch.
         noise = torch.randn_like(latents, device=ldm.device)
         alpha_bar_T = ldm.alpha_bar[T].view(-1, 1, 1, 1)
         x_t = alpha_bar_T.sqrt() * latents + (1 - alpha_bar_T).sqrt() * noise
-        noisy_ori = x_t
+
+        noisy_ori = visualize_latents(x_t, (256, 256))
 
         # Set eta to control stochasticity: eta=0 yields a deterministic reverse process
         eta = 0.0
@@ -158,7 +159,7 @@ def load_model(args):
         n_res_blocks=2,         # 每个分辨率级别的残差块数量
         attention_levels=[],    # No attention applied
         channel_multipliers=[1, 2, 4, 8],  # 通道数倍增因子
-        n_heads=8,              # 多头注意力机制的头数
+        n_heads=1,              # 多头注意力机制的头数
         tf_layers=1,            # Transformer 层数
         d_cond=768              # 条件嵌入维度（与 CLIP 一致）
     )
@@ -175,9 +176,9 @@ def load_model(args):
     
     ae_ckpt_folder, runned_epoch = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ae_ckpt_folder and os.path.exists(ae_ckpt_folder):
-        encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=4)
-        decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
-        autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
+        encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=args.ae_dim)
+        decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=args.ae_dim)
+        autoencoder = Autoencoder(encoder, decoder, emb_channels=args.ae_dim, z_channels=args.ae_dim).to(device)
         
         ae_path = os.path.join(ae_ckpt_folder, "ae.pt")
         
@@ -257,4 +258,5 @@ def eval(args):
 if __name__ == "__main__":
     args = parse_args()
     print(f"Start Evaluation for ldm")
+    print(f"Eval timestep is {args.ldm_sample_t}")
     eval(args=args)

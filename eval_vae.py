@@ -51,9 +51,9 @@ def save_sample_images(autoencoder: Autoencoder, images: torch.Tensor, batch_idx
     
 def load_model(args):
     # 定义Autoencoder模型
-    encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=4)
-    decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
-    autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
+    encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=args.ae_dim)
+    decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=args.ae_dim)
+    autoencoder = Autoencoder(encoder, decoder, emb_channels=args.ae_dim, z_channels=args.ae_dim).to(device)
  
     ckpt_folder_path, _ = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ckpt_folder_path:

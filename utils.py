@@ -69,6 +69,7 @@ def parse_args():
     parser.add_argument("--sample_batch_size", type=int, default=1, help="sample batch size")
     parser.add_argument("--no_clip", type=bool, default=True, help="whether to use clip")
     parser.add_argument("--no_text", type=bool, default=True, help="whether to use text conditioning")
+    parser.add_argument("--ae_dim", type=int, default=4, help="autoencoder bottle neck dimension")
     args = parser.parse_args()
 
     # 读取 JSON 配置

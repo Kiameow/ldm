@@ -176,9 +176,9 @@ def load_model(args):
     
     ae_ckpt_folder, _ = get_latest_ckpt_path(args.dataset_name, args.save_ae_dir)
     if ae_ckpt_folder and os.path.exists(ae_ckpt_folder):
-        encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=4)
-        decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=4)
-        autoencoder = Autoencoder(encoder, decoder, emb_channels=4, z_channels=4).to(device)
+        encoder = Encoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, in_channels=1, z_channels=args.ae_dim)
+        decoder = Decoder(channels=128, channel_multipliers=[1, 2, 4, 8], n_resnet_blocks=2, out_channels=1, z_channels=args.ae_dim)
+        autoencoder = Autoencoder(encoder, decoder, emb_channels=args.ae_dim, z_channels=args.ae_dim).to(device)
         
         ae_path = os.path.join(ae_ckpt_folder, "ae.pt")
         
@@ -226,7 +226,7 @@ def load_model(args):
     
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(ldm.model.parameters(), lr=args.initial_lr)
-    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1)
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
     
     return ldm, loss_fn, optimizer, lr_scheduler, runned_epoch
 
